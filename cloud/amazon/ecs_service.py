@@ -53,7 +53,7 @@ options:
             - The task definition container name to access the service from the ELB.  If configured, must be configured with role, load_balancer and container_port parameters.
         required: False
         default: null
-     container_port:
+    container_port:
         description:
             - The task definition container port to access the service from the ELB.  If configured, must be configured with role, load_balancer and container_name parameters.
         required: False
