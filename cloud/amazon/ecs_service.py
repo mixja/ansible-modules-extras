@@ -91,11 +91,11 @@ EXAMPLES = '''
 # Simple example of create service without a load balancer
 - name: Create service
   ecs_service:
-    name: console-sample-app-service
-    operation: create
-    cluster: console-sample-app-static-cluster
-    task_definition: console-sample-app-static-taskdef
-    desired_count: 1
+      name: console-sample-app-service
+      operation: create
+      cluster: console-sample-app-static-cluster
+      task_definition: console-sample-app-static-taskdef
+      desired_count: 1
   register: service_output
 # Simple example of create service with a load balancer. 
 # The role, load_balancer, container_name and container_port must be specified.
@@ -293,7 +293,7 @@ def json_serial(obj):
     raise TypeError ("Type not serializable")
 
 def fix_datetime(result):
-    """Temporary fix to convert datetime fields from Boto3 to dateiime string.  See https://github.com/ansible/ansible-modules-extras/issues/1348."""
+    """Temporary fix to convert datetime fields from Boto3 to datetime string.  See https://github.com/ansible/ansible-modules-extras/issues/1348."""
     return json.loads(json.dumps(result, default=json_serial))
 
 def main():
@@ -376,8 +376,6 @@ def main():
             module.fail_json(msg="Service to delete was not found")
         else:
             if not module.check_mode:
-            # it exists, so we should delete it and mark changed.
-            # return info about the cluster deleted
                 results['service'] = fix_datetime(service_mgr.delete_service(
                     module.params['wait_until_inactive'],
                     module.params['name'],
