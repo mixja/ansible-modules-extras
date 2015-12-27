@@ -22,6 +22,7 @@ description:
     - Creates, updates or deletes ecs services.
 version_added: "2.0"
 author: Justin Menga(@mixja)
+requirements: [ boto, boto3 ]
 options:
     name: 
         description:
@@ -34,7 +35,7 @@ options:
         choices: ['create', 'update', 'delete']
     cluster:
         description:
-            - The name of the cluster to run the task on.
+            - The name of the cluster to run the service on.
         required: False
         default: default
     task_definition:
