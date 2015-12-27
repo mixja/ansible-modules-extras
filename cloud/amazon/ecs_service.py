@@ -343,16 +343,16 @@ def main():
         else:
             if not module.check_mode:
                 results['service'] = fix_datetime(service_mgr.create_service(
-                    module.params.get('name'),
-                    module.params.get('desired_count'),    
-                    module.params.get('task_definition'),
-                    module.params.get('cluster'),
-                    module.params.get('load_balancer'),
-                    module.params.get('container_name'),
-                    module.params.get('container_port'),
-                    module.params.get('role'),
-                    module.params.get('min_healthy_percent'),
-                    module.params.get('max_percent') 
+                    module.params['name'],
+                    module.params['desired_count'],    
+                    module.params['task_definition'],
+                    module.params['cluster'],
+                    module.params['load_balancer'],
+                    module.params['container_name'],
+                    module.params['container_port'],
+                    module.params['role'],
+                    module.params['min_healthy_percent'],
+                    module.params['max_percent'] 
                 ))
             results['changed'] = True
 
@@ -362,12 +362,12 @@ def main():
         elif service_mgr.check_for_update(module.params, existing):
             if not module.check_mode:
                 results['service'] = fix_datetime(service_mgr.update_service(
-                    module.params.get('name'),
-                    module.params.get('desired_count'),  
-                    module.params.get('cluster'),  
-                    module.params.get('task_definition'),
-                    module.params.get('min_healthy_percent'),
-                    module.params.get('max_percent') 
+                    module.params['name'],
+                    module.params['desired_count'],  
+                    module.params['cluster'],  
+                    module.params['task_definition'],
+                    module.params['min_healthy_percent'],
+                    module.params['max_percent'] 
                 ))
             results['changed'] = True
 
