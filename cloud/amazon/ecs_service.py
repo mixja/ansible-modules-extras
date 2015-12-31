@@ -79,6 +79,11 @@ options:
             - Lower limit as percentage of desired_count (rounding down to nearest integer) of number of running healthy service instances that must be running during a deployment.
         required: False
         default: null
+    wait_until_stable:
+        description:
+            - When creating or updating a service, wait for service to reach a stable state. This is useful if you need to wait for deployment of the service to complete.
+        required: False
+        default: no
     wait_until_inactive:
         description:
             - When deleting a service, wait for service to reach an INACTIVE state. When deleting a service, the service will first transition from an ACTIVE state to a DRAINING state, and then to an INACTIVE state when all client connections to the service have closed.
@@ -185,7 +190,7 @@ class EcsServiceManager:
             return response['services'][0]
         return None
 
-    def create_service(self, cluster_name, service_name, desired_count, task_definition, load_balancer=None, container_name=None, container_port=None, role=None, min_healthy_percent=None, max_percent=None):
+    def create_service(self, wait_until_stable, cluster_name, service_name, desired_count, task_definition, load_balancer=None, container_name=None, container_port=None, role=None, min_healthy_percent=None, max_percent=None):
         """Creates a service"""
         args = dict()
         deployment_config = dict()
@@ -212,11 +217,14 @@ class EcsServiceManager:
             args['loadBalancers'] = [load_balancers]
         try:
             response = self.ecs.create_service(**args)
+            if wait_until_stable:
+                self.wait_until_stable(cluster_name, service_name)
+                response['service'] = self.describe_services(cluster_name, service_name)
         except Exception as e:
             self.module.fail_json(msg="Can't create service - " + str(e))
         return response['service']
 
-    def update_service(self, cluster_name, service_name, desired_count, task_definition=None, min_healthy_percent=None, max_percent=None):
+    def update_service(self, wait_until_stable, cluster_name, service_name, desired_count, task_definition=None, min_healthy_percent=None, max_percent=None):
         """Updates an existing service"""
         args = dict()
         deployment_config = dict()
@@ -233,6 +241,9 @@ class EcsServiceManager:
             args['deploymentConfiguration'] = deployment_config
         try:
             response = self.ecs.update_service(**args)
+            if wait_until_stable:
+                self.wait_until_stable(cluster_name, service_name)
+                response['service'] = self.describe_services(cluster_name, service_name)
         except Exception as e:
             self.module.fail_json(msg="Can't update service - " + str(e))
         return response['service']
@@ -241,20 +252,25 @@ class EcsServiceManager:
         """Deletes a service"""
         try:
             # Set service desired count to zero
-            response = self.update_service(cluster_name, service_name, 0)
+            response = self.update_service(False, cluster_name, service_name, 0)
 
             # Delete service
             self.ecs.delete_service(cluster=cluster_name, service=service_name)
 
             if wait:
                 # Wait for service to become inactive
-                waiter = self.ecs.get_waiter('services_inactive')
+                waiter = self.ecs.get_waiter('services_stable')
                 waiter.wait(cluster=cluster_name, services=[ service_name ])
             
             response = self.describe_services(cluster_name, service_name)
         except Exception as e:
             self.module.fail_json(msg="Can't delete service - " + str(e))
         return response
+
+    def wait_until_stable(self, cluster_name, service_name):
+        """Waits for service to become stable"""
+        waiter = self.ecs.get_waiter('services_stable')
+        waiter.wait(cluster=cluster_name, services=[ service_name ])
 
     def check_for_update(self, desired, existing, task_definition_arn):
         """Compares desired state with existing state to determine if an update is required"""
@@ -296,6 +312,7 @@ def main():
         desired_count=dict(required=False, type='int'),
         min_healthy_percent=dict(required=False, type='int'),
         max_percent=dict(required=False, type='int'),
+        wait_until_stable=dict(default=False, required=False, choices=BOOLEANS),
         wait_until_inactive=dict(default=True, required=False, choices=BOOLEANS)
     ))
 
@@ -341,6 +358,7 @@ def main():
         if not existing or existing.get('status') != 'ACTIVE' :
             if not module.check_mode:
                 results['service'] = fix_datetime(service_mgr.create_service(
+                    module.params['wait_until_stable'],
                     module.params['cluster'],
                     module.params['name'],
                     module.params['desired_count'],
@@ -357,6 +375,7 @@ def main():
         elif service_mgr.check_for_update(module.params, existing, task_definition_arn):
             if not module.check_mode:
                 results['service'] = fix_datetime(service_mgr.update_service(
+                    module.params['wait_until_stable'],
                     module.params['cluster'],  
                     module.params['name'],
                     module.params['desired_count'],  
