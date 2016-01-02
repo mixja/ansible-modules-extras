@@ -259,7 +259,7 @@ class EcsServiceManager:
 
             if wait:
                 # Wait for service to become inactive
-                waiter = self.ecs.get_waiter('services_stable')
+                waiter = self.ecs.get_waiter('services_inactive')
                 waiter.wait(cluster=cluster_name, services=[ service_name ])
             
             response = self.describe_services(cluster_name, service_name)
