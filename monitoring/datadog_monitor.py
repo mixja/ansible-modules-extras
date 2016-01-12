@@ -49,10 +49,12 @@ options:
         required: true
         choices: ['present', 'absent', 'muted', 'unmuted']
     type:
-        description: ["The type of the monitor."]
+        description:
+            - "The type of the monitor."
+            - The 'event alert'is available starting at Ansible 2.1
         required: false
         default: null
-        choices: ['metric alert', 'service check']
+        choices: ['metric alert', 'service check', 'event alert']
     query:
         description: ["The monitor query to notify on with syntax varying depending on what type of monitor you are creating."]
         required: false
@@ -139,7 +141,7 @@ def main():
             api_key=dict(required=True),
             app_key=dict(required=True),
             state=dict(required=True, choises=['present', 'absent', 'mute', 'unmute']),
-            type=dict(required=False, choises=['metric alert', 'service check']),
+            type=dict(required=False, choises=['metric alert', 'service check', 'event alert']),
             name=dict(required=True),
             query=dict(required=False),
             message=dict(required=False, default=None),
